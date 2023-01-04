@@ -3,6 +3,8 @@
 // declaring vars and address of mpu
 int wireAddress = 0x68;
 float accX,accY,accZ;
+float gyroX,gyroY,gyroZ;
+float pitch,roll;
 
 void setup() {
   Wire.begin(wireAddress);
@@ -19,7 +21,7 @@ void setup() {
 }
 
 void loop() {
-  // sending values
+  // sending values for accelaration
   Wire.beginTransmission(wireAddress);
   Wire.write(0x3B); // ACCEL_XOUT[15:8]
   Wire.endTransmission(false);
@@ -31,17 +33,43 @@ void loop() {
   accX = (Wire.read() << 8 | Wire.read()) / 16384.0; // 16384.0 = sensitivity
   accY = (Wire.read() << 8 | Wire.read()) / 16384.0;
   accZ = (Wire.read() << 8 | Wire.read()) / 16384.0;
-  
+
+  // converting to pitch/roll
+  accX = accX * 9.8;
+  accY = accY * 9.8;
+  accZ = accZ * 9.8;
+
+  pitch = asinf(accX / 9.8);
+  roll = atan2f(accY, accZ);
+
+  // reading for gyroscope
+  Wire.beginTransmission(wireAddress);
+  Wire.write(0x43); // ACCEL_XOUT[15:8]
+  Wire.endTransmission(false);
+
+
+  Wire.requestFrom(wireAddress, 6, true); // reading gyro data (next 6 registers)
+
+  // retrieving values - shifting 15:8 over 8 bits to convert back to original number
+  gyroX = (Wire.read() << 8 | Wire.read()) / 131;
+  gyroY = (Wire.read() << 8 | Wire.read()) / 131;
+  gyroZ = (Wire.read() << 8 | Wire.read()) / 131;
 
   // printing values
-  Serial.print("X: ");
-  Serial.print(accX);
+  Serial.print("Pitch: ");
+  Serial.print(pitch);
   Serial.print(" ");
-  Serial.print("Y: ");
-  Serial.print(accY);
+  Serial.print("Roll: ");
+  Serial.print(roll);
+
+  Serial.print("gyro X: ");
+  Serial.print(gyroX);
   Serial.print(" ");
-  Serial.print("Z: ");
-  Serial.print(accZ);
+  Serial.print("gyro Y: ");
+  Serial.print(gyroY);
+  Serial.print(" ");
+  Serial.print("gyro Z: ");
+  Serial.print(gyroZ);
   Serial.print(" ");
   Serial.print("\n");
 
