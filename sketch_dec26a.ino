@@ -42,6 +42,10 @@ void loop() {
   pitch = asinf(accX / 9.8);
   roll = atan2f(accY, accZ);
 
+  // rad to deg
+  pitch = (pitch * (180/3.14));
+  roll = (roll * (180/3.14));
+
   // reading for gyroscope
   Wire.beginTransmission(wireAddress);
   Wire.write(0x43); // ACCEL_XOUT[15:8]
@@ -61,6 +65,7 @@ void loop() {
   Serial.print(" ");
   Serial.print("Roll: ");
   Serial.print(roll);
+  Serial.print("\n");
 
   Serial.print("gyro X: ");
   Serial.print(gyroX);
@@ -73,6 +78,5 @@ void loop() {
   Serial.print(" ");
   Serial.print("\n");
 
-  delay(500);
-
+  delay(100);
 }
