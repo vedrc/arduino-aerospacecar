@@ -1,33 +1,39 @@
 #include <Wire.h>
 
-// declaring vars and address of mpu
-int wireAddress = 0x68;
+// declaring vars and address of mpu (0x68)
+int mpuAddress = 0x68;
 float accX,accY,accZ;
 float gyroX,gyroY,gyroZ;
 float pitch,roll;
 
 void setup() {
-  Wire.begin(wireAddress);
+  Wire.begin(mpuAddress);
+
+  // 9600 baud set in serial monitor
   Serial.begin(9600);
 
   // setting up wire measurements with i2c initiation
-  Wire.beginTransmission(wireAddress);
+  Wire.beginTransmission(mpuAddress);
   Wire.write(0x6B); // PWR_MGMT_1
   Wire.write(0x00);  // reset
   Wire.endTransmission(true);
+
+  // recommended delay for optimal performance
   delay(100);
+
+  calculateError();
 
   
 }
 
 void loop() {
-  // sending values for accelaration
-  Wire.beginTransmission(wireAddress);
+  // requesting an i2c transmission from 0x3B to get the current data for that register
+  Wire.beginTransmission(mpuAddress);
   Wire.write(0x3B); // ACCEL_XOUT[15:8]
   Wire.endTransmission(false);
 
 
-  Wire.requestFrom(wireAddress, 6, true); // reading accelerometer data (next 6 registers)
+  Wire.requestFrom(mpuAddress, 6, true); // reading accelerometer data (next 6 registers)
 
   // retrieving values - shifting 15:8 over 8 bits to convert back to original number
   accX = (Wire.read() << 8 | Wire.read()) / 16384.0; // 16384.0 = sensitivity
@@ -35,27 +41,29 @@ void loop() {
   accZ = (Wire.read() << 8 | Wire.read()) / 16384.0;
 
   // converting to pitch/roll
+  // not sure of the exact physics yet but this could be useful to determine the current positioning of the car
+  // also a more testable value that can be easily looked at to see if its working
   accX = accX * 9.8;
   accY = accY * 9.8;
   accZ = accZ * 9.8;
 
   pitch = asinf(accX / 9.8);
   roll = atan2f(accY, accZ);
-
-  // rad to deg
+  
+  // converting from rad to deg
   pitch = (pitch * (180/3.14));
   roll = (roll * (180/3.14));
 
-  // reading for gyroscope
-  Wire.beginTransmission(wireAddress);
-  Wire.write(0x43); // ACCEL_XOUT[15:8]
+  // reading register value (0x43) for gyroscopic data
+  Wire.beginTransmission(mpuAddress);
+  Wire.write(0x43); // GYRO_XOUT[15:8]
   Wire.endTransmission(false);
 
 
-  Wire.requestFrom(wireAddress, 6, true); // reading gyro data (next 6 registers)
+  Wire.requestFrom(mpuAddress, 6, true); // reading gyro data (next 6 registers)
 
   // retrieving values - shifting 15:8 over 8 bits to convert back to original number
-  gyroX = (Wire.read() << 8 | Wire.read()) / 131;
+  gyroX = (Wire.read() << 8 | Wire.read()) / 131; // 131 = gyro sensitivity
   gyroY = (Wire.read() << 8 | Wire.read()) / 131;
   gyroZ = (Wire.read() << 8 | Wire.read()) / 131;
 
@@ -79,4 +87,9 @@ void loop() {
   Serial.print("\n");
 
   delay(100);
+}
+
+// will update with error code in the future
+void calculateError() {
+  return;
 }
