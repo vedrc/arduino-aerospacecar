@@ -5,6 +5,10 @@ int mpuAddress = 0x68;
 float accX,accY,accZ;
 float gyroX,gyroY,gyroZ;
 float pitch,roll;
+float accErrorX,accErrorY,accErrorZ;
+float gyroErrorX,gyroErrorY,gyroErrorZ;
+
+int c = 0;
 
 void setup() {
   Wire.begin(mpuAddress);
@@ -40,6 +44,12 @@ void loop() {
   accY = (Wire.read() << 8 | Wire.read()) / 16384.0;
   accZ = (Wire.read() << 8 | Wire.read()) / 16384.0;
 
+  // correcting with inputs from below
+  accX = accX - accErrorX;
+  accY = accY - accErrorY;
+  accZ = accZ - accErrorZ;
+
+  
   // converting to pitch/roll
   // not sure of the exact physics yet but this could be useful to determine the current positioning of the car
   // also a more testable value that can be easily looked at to see if its working
@@ -53,6 +63,7 @@ void loop() {
   // converting from rad to deg
   pitch = (pitch * (180/3.14));
   roll = (roll * (180/3.14));
+  
 
   // reading register value (0x43) for gyroscopic data
   Wire.beginTransmission(mpuAddress);
@@ -67,13 +78,28 @@ void loop() {
   gyroY = (Wire.read() << 8 | Wire.read()) / 131;
   gyroZ = (Wire.read() << 8 | Wire.read()) / 131;
 
+  // correcting with gyro error
+  gyroX = gyroX - gyroErrorX;
+  gyroY = gyroY - gyroErrorY;
+  gyroZ = gyroZ - gyroErrorZ;
+
   // printing values
-  Serial.print("Pitch: ");
+
+  Serial.print("pitch: ");
   Serial.print(pitch);
-  Serial.print(" ");
-  Serial.print("Roll: ");
+  Serial.print(" roll: ");
   Serial.print(roll);
   Serial.print("\n");
+  /*
+  Serial.print("Acc X: ");
+  Serial.print(accX);
+  Serial.print(" ");
+  Serial.print("Acc Y: ");
+  Serial.print(accY);
+  Serial.print("Acc Z: ");
+  Serial.print(accZ);
+  Serial.print("\n");
+  */
 
   Serial.print("gyro X: ");
   Serial.print(gyroX);
@@ -86,10 +112,55 @@ void loop() {
   Serial.print(" ");
   Serial.print("\n");
 
-  delay(100);
+  delay(500);
 }
 
 // will update with error code in the future
 void calculateError() {
-  return;
+  // calculating error value by finding the different values it gets for one position, then averaging it out
+  // accelerometer averaging
+  while (c < 500) {
+    Wire.beginTransmission(mpuAddress);
+    Wire.write(0x3B); // ACCEL_XOUT[15:8]
+    Wire.endTransmission(false);
+    Wire.requestFrom(mpuAddress, 6, true);
+    accX = (Wire.read() << 8 | Wire.read()) / 16384.0; 
+    accY = (Wire.read() << 8 | Wire.read()) / 16384.0;
+    accZ = (Wire.read() << 8 | Wire.read()) / 16384.0;
+
+    accErrorX = accErrorX + accX;
+    accErrorY = accErrorY + accY;
+    accErrorZ = accErrorZ + accZ;
+
+    c++;
+  }
+
+  accErrorX = accErrorX / 500;
+  accErrorY = accErrorY / 500;
+  accErrorZ = accErrorZ / 500;
+  c = 0;
+
+  // gyro averaging
+  while (c < 500) {
+    Wire.beginTransmission(mpuAddress);
+    Wire.write(0x43);
+    Wire.endTransmission(false);
+    Wire.requestFrom(mpuAddress, 6, true);
+    gyroX = (Wire.read() << 8 | Wire.read()) / 131;
+    gyroY = (Wire.read() << 8 | Wire.read()) / 131;
+    gyroZ = (Wire.read() << 8 | Wire.read()) / 131;
+
+    gyroErrorX = gyroErrorX + gyroX;
+    gyroErrorY = gyroErrorY + gyroY;
+    gyroErrorZ = gyroErrorZ + gyroZ;
+
+    c++;
+  }
+
+  gyroErrorX = gyroErrorX / 500;
+  gyroErrorY = gyroErrorY / 500;
+  accErrorZ = gyroErrorZ / 500;
+  c = 0;
+
+  
 }
