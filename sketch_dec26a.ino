@@ -45,9 +45,9 @@ void loop() {
   accZ = (Wire.read() << 8 | Wire.read()) / 16384.0;
 
   // correcting with inputs from below
-  accX = accX - accErrorX;
-  accY = accY - accErrorY;
-  accZ = accZ - accErrorZ;
+  accX = accX - (-0.02);
+  accY = accY;
+  accZ = accZ - (-2);
 
   
   // converting to pitch/roll
@@ -79,10 +79,11 @@ void loop() {
   gyroZ = (Wire.read() << 8 | Wire.read()) / 131;
 
   // correcting with gyro error
-  gyroX = gyroX - gyroErrorX;
-  gyroY = gyroY - gyroErrorY;
-  gyroZ = gyroZ - gyroErrorZ;
+  gyroX = gyroX - (-9);
+  gyroY = gyroY;
+  gyroZ = gyroZ - (-1000);
 
+  
   // printing values
 
   Serial.print("pitch: ");
@@ -90,6 +91,7 @@ void loop() {
   Serial.print(" roll: ");
   Serial.print(roll);
   Serial.print("\n");
+  
   /*
   Serial.print("Acc X: ");
   Serial.print(accX);
@@ -113,8 +115,10 @@ void loop() {
   Serial.print("\n");
 
   delay(500);
+
 }
 
+// will update with error code in the future
 void calculateError() {
   // calculating error value by finding the different values it gets for one position, then averaging it out
   // accelerometer averaging
@@ -160,6 +164,7 @@ void calculateError() {
   gyroErrorY = gyroErrorY / 500;
   accErrorZ = gyroErrorZ / 500;
   c = 0;
+
 
   
 }
