@@ -118,7 +118,6 @@ void loop() {
 
 }
 
-// will update with error code in the future
 void calculateError() {
   // calculating error value by finding the different values it gets for one position, then averaging it out
   // accelerometer averaging
